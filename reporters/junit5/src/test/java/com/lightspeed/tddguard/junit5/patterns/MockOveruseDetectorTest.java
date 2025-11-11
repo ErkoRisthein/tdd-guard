@@ -1,5 +1,6 @@
 package com.lightspeed.tddguard.junit5.patterns;
 
+import com.lightspeed.tddguard.junit5.SourceDirectoryResolver;
 import com.lightspeed.tddguard.junit5.model.TestJson;
 import com.lightspeed.tddguard.junit5.model.TestSummary;
 import com.lightspeed.tddguard.junit5.patterns.model.EducationalFeedback;
@@ -21,16 +22,22 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MockOveruseDetectorTest {
 
-    private final MockOveruseDetector detector = new MockOveruseDetector();
+    private MockOveruseDetector createDetector(Path projectRoot) {
+        SourceDirectoryResolver resolver = new SourceDirectoryResolver(projectRoot, key -> null, key -> null);
+        SourceAnalyzer analyzer = new SourceAnalyzer(resolver);
+        return new MockOveruseDetector(analyzer);
+    }
 
     @Test
-    void shouldReturnCorrectCategory() {
+    void shouldReturnCorrectCategory(@TempDir Path projectRoot) {
+        MockOveruseDetector detector = createDetector(projectRoot);
         assertEquals("mock-overuse", detector.getCategory());
     }
 
     @Test
     void shouldDetectHighMockRatio(@TempDir Path projectRoot) throws IOException {
         // Given: 50 mocks across 20 tests (ratio 2.5 > threshold 2.0)
+        MockOveruseDetector detector = createDetector(projectRoot);
         createTestFileWithMocks(projectRoot, "Test1.java", 25);
         createTestFileWithMocks(projectRoot, "Test2.java", 25);
 
@@ -54,6 +61,7 @@ class MockOveruseDetectorTest {
     @Test
     void shouldNotDetectBelowThreshold(@TempDir Path projectRoot) throws IOException {
         // Given: 30 mocks across 20 tests (ratio 1.5 < threshold 2.0)
+        MockOveruseDetector detector = createDetector(projectRoot);
         createTestFileWithMocks(projectRoot, "Test1.java", 15);
         createTestFileWithMocks(projectRoot, "Test2.java", 15);
 
@@ -70,6 +78,7 @@ class MockOveruseDetectorTest {
     @Test
     void shouldDetectValueObjectMocks(@TempDir Path projectRoot) throws IOException {
         // Given: Low ratio but value object mocks present
+        MockOveruseDetector detector = createDetector(projectRoot);
         String testCode = "import org.mockito.Mock;\n\n" +
             "public class OrderTest {\n" +
             "    @Mock\n" +
@@ -101,6 +110,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldCountMockAnnotations(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "import org.mockito.Mock;\n\n" +
             "public class ServiceTest {\n" +
@@ -127,6 +137,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldCountMockBeanAnnotations(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "import org.springframework.boot.test.mock.mockito.MockBean;\n\n" +
             "@SpringBootTest\n" +
@@ -154,6 +165,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldCountMockitoDotMockCalls(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "import static org.mockito.Mockito.*;\n\n" +
             "public class LegacyTest {\n" +
@@ -180,6 +192,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldCombineAllMockTypes(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "import org.mockito.Mock;\n" +
             "import org.springframework.boot.test.mock.mockito.MockBean;\n" +
@@ -210,6 +223,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldHandleNoMocks(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "public class CleanTest {\n" +
             "    private final Service service = new RealService();\n\n" +
@@ -233,6 +247,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldIncludeExampleFileInEvidence(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         createTestFileWithValueObjectMock(projectRoot, "ExampleTest.java");
 
@@ -251,6 +266,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldProvideMeaningfulMessage(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         createTestFileWithMocks(projectRoot, "Test.java", 50);
 
@@ -270,6 +286,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldProvideRecommendation(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         createTestFileWithMocks(projectRoot, "Test.java", 50);
 
@@ -288,6 +305,7 @@ class MockOveruseDetectorTest {
 
     @Test
     void shouldHandleZeroTests(@TempDir Path projectRoot) throws IOException {
+        MockOveruseDetector detector = createDetector(projectRoot);
         // Given
         createTestFileWithMocks(projectRoot, "Test.java", 10);
 

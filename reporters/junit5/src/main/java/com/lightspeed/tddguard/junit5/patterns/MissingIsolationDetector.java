@@ -33,6 +33,12 @@ public class MissingIsolationDetector implements PatternDetector {
         "\\b([0-9]{4,5})\\b"
     );
 
+    private final SourceAnalyzer sourceAnalyzer;
+
+    public MissingIsolationDetector(SourceAnalyzer sourceAnalyzer) {
+        this.sourceAnalyzer = sourceAnalyzer;
+    }
+
     @Override
     public String getCategory() {
         return "missing-isolation";
@@ -44,7 +50,7 @@ public class MissingIsolationDetector implements PatternDetector {
         Path projectRoot,
         BuildMetrics buildMetrics
     ) {
-        List<Path> testFiles = SourceAnalyzer.findTestFiles(projectRoot);
+        List<Path> testFiles = sourceAnalyzer.findTestFiles(projectRoot);
 
         if (testFiles.isEmpty()) {
             return Optional.empty();

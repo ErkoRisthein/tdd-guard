@@ -1,5 +1,6 @@
 package com.lightspeed.tddguard.junit5.patterns;
 
+import com.lightspeed.tddguard.junit5.SourceDirectoryResolver;
 import com.lightspeed.tddguard.junit5.model.TestJson;
 import com.lightspeed.tddguard.junit5.model.TestSummary;
 import com.lightspeed.tddguard.junit5.patterns.model.EducationalFeedback;
@@ -21,15 +22,21 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class FileStructureAnalyzerTest {
 
-    private final FileStructureAnalyzer detector = new FileStructureAnalyzer();
+    private FileStructureAnalyzer createDetector(Path projectRoot) {
+        SourceDirectoryResolver resolver = new SourceDirectoryResolver(projectRoot, key -> null, key -> null);
+        SourceAnalyzer analyzer = new SourceAnalyzer(resolver);
+        return new FileStructureAnalyzer(analyzer);
+    }
 
     @Test
-    void shouldReturnCorrectCategory() {
+    void shouldReturnCorrectCategory(@TempDir Path projectRoot) {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         assertEquals("file-structure", detector.getCategory());
     }
 
     @Test
     void shouldDetectTestsInProductionDirectory(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Test file in src/main/java (CRITICAL ERROR)
         createFileInMainDirectory(projectRoot, "UserServiceTest.java", "public class UserServiceTest {}");
 
@@ -55,6 +62,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldDetectPackageStructureMismatch(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Test in wrong package structure
         // Production: com.example.service.UserService
         // Test: com.example.UserServiceTest (should be com.example.service.UserServiceTest)
@@ -87,6 +95,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldDetectMissingTestSuffix(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Test file without Test suffix or prefix
         createTestFile(projectRoot, "com/example/UserValidator.java",
             "package com.example;\nimport org.junit.jupiter.api.Test;\n" +
@@ -115,6 +124,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldAcceptTestPrefix(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Test file with Test prefix (valid)
         createTestFile(projectRoot, "com/example/TestUserService.java",
             "package com.example;\nimport org.junit.jupiter.api.Test;\n" +
@@ -143,6 +153,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldAcceptTestSuffix(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Test file with Test suffix (valid)
         createTestFile(projectRoot, "com/example/UserServiceTest.java",
             "package com.example;\nimport org.junit.jupiter.api.Test;\n" +
@@ -171,6 +182,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldDetectMultipleIssuesTogether(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Multiple file structure issues
         createFileInMainDirectory(projectRoot, "InvalidTest.java", "public class InvalidTest {}");
         createTestFile(projectRoot, "com/example/UserValidator.java",
@@ -202,6 +214,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldNotDetectIssuesInCleanStructure(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Properly structured test files
         createTestFile(projectRoot, "com/example/service/UserServiceTest.java",
             "package com.example.service;\nimport org.junit.jupiter.api.Test;\n" +
@@ -229,6 +242,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldProvideDetailedMessage(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given
         createFileInMainDirectory(projectRoot, "BadTest.java", "public class BadTest {}");
 
@@ -248,6 +262,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldProvideActionableRecommendation(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given
         createFileInMainDirectory(projectRoot, "BadTest.java", "public class BadTest {}");
 
@@ -266,6 +281,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldHandleEmptyProjectGracefully(@TempDir Path projectRoot) {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Empty project with no test files
         TestJson testResults = createTestResults(0, 0, 0, 0);
         BuildMetrics buildMetrics = BuildMetrics.empty();
@@ -279,6 +295,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldIgnoreBuildDirectories(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Test file in build directory (should be ignored)
         Path buildDir = projectRoot.resolve("build/classes/java/test/com/example");
         Files.createDirectories(buildDir);
@@ -296,6 +313,7 @@ class FileStructureAnalyzerTest {
 
     @Test
     void shouldHandleKotlinFiles(@TempDir Path projectRoot) throws IOException {
+        FileStructureAnalyzer detector = createDetector(projectRoot);
         // Given: Kotlin test file in wrong location
         createFileInMainDirectoryKotlin(projectRoot, "UserServiceTest.kt", "class UserServiceTest");
 

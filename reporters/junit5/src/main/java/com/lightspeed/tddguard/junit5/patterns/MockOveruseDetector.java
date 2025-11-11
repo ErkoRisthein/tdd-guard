@@ -30,6 +30,12 @@ public class MockOveruseDetector implements PatternDetector {
     private static final Pattern MOCKITO_PATTERN =
         Pattern.compile("mock\\(([A-Z][A-Za-z0-9_]*)\\.class");
 
+    private final SourceAnalyzer sourceAnalyzer;
+
+    public MockOveruseDetector(SourceAnalyzer sourceAnalyzer) {
+        this.sourceAnalyzer = sourceAnalyzer;
+    }
+
     @Override
     public String getCategory() {
         return "mock-overuse";
@@ -41,7 +47,7 @@ public class MockOveruseDetector implements PatternDetector {
         Path projectRoot,
         BuildMetrics buildMetrics
     ) {
-        List<Path> testFiles = SourceAnalyzer.findTestFiles(projectRoot);
+        List<Path> testFiles = sourceAnalyzer.findTestFiles(projectRoot);
 
         int mockCount = 0;
         Set<String> valueObjectMocks = new LinkedHashSet<>();

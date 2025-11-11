@@ -1,5 +1,6 @@
 package com.lightspeed.tddguard.junit5.patterns;
 
+import com.lightspeed.tddguard.junit5.SourceDirectoryResolver;
 import com.lightspeed.tddguard.junit5.model.TestJson;
 import com.lightspeed.tddguard.junit5.model.TestSummary;
 import com.lightspeed.tddguard.junit5.patterns.model.EducationalFeedback;
@@ -21,15 +22,21 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MissingIsolationDetectorTest {
 
-    private final MissingIsolationDetector detector = new MissingIsolationDetector();
+    private MissingIsolationDetector createDetector(Path projectRoot) {
+        SourceDirectoryResolver resolver = new SourceDirectoryResolver(projectRoot, key -> null, key -> null);
+        SourceAnalyzer analyzer = new SourceAnalyzer(resolver);
+        return new MissingIsolationDetector(analyzer);
+    }
 
     @Test
-    void shouldReturnCorrectCategory() {
+    void shouldReturnCorrectCategory(@TempDir Path projectRoot) {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         assertEquals("missing-isolation", detector.getCategory());
     }
 
     @Test
     void shouldDetectHardcodedUrls(@TempDir Path projectRoot) throws IOException {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "public class ApiTest {\n" +
             "    @Test\n" +
@@ -58,6 +65,7 @@ class MissingIsolationDetectorTest {
 
     @Test
     void shouldDetectHardcodedFilePaths(@TempDir Path projectRoot) throws IOException {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "public class FileTest {\n" +
             "    @Test\n" +
@@ -81,6 +89,7 @@ class MissingIsolationDetectorTest {
 
     @Test
     void shouldDetectHardcodedPorts(@TempDir Path projectRoot) throws IOException {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given - Use URL with port which will definitely be detected
         String testCode = "public class ServerTest {\n" +
             "    @Test\n" +
@@ -104,6 +113,7 @@ class MissingIsolationDetectorTest {
 
     @Test
     void shouldNotDetectInCleanTests(@TempDir Path projectRoot) throws IOException {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given: Clean test with no hardcoded resources
         String testCode = "public class CleanTest {\n" +
             "    @Test\n" +
@@ -126,6 +136,7 @@ class MissingIsolationDetectorTest {
 
     @Test
     void shouldIncludeExamplesInEvidence(@TempDir Path projectRoot) throws IOException {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "public class Test {\n" +
             "    void test() {\n" +
@@ -151,6 +162,7 @@ class MissingIsolationDetectorTest {
 
     @Test
     void shouldProvideRecommendation(@TempDir Path projectRoot) throws IOException {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "public class Test {\n" +
             "    void test() {\n" +
@@ -174,6 +186,7 @@ class MissingIsolationDetectorTest {
 
     @Test
     void shouldHandleEmptyProject(@TempDir Path projectRoot) {
+        MissingIsolationDetector detector = createDetector(projectRoot);
         // Given: No test files
         TestJson testResults = createTestResults(0, 0, 0, 0);
         BuildMetrics buildMetrics = BuildMetrics.empty();

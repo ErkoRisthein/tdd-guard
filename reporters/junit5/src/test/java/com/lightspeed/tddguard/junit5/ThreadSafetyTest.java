@@ -27,8 +27,9 @@ class ThreadSafetyTest {
 
     @RepeatedTest(10) // Repeat to increase chance of catching race conditions
     void shouldHandleConcurrentTestRecording(@TempDir Path tempDir) throws Exception {
-        // Given: TestResultCollector
-        TestResultCollector collector = new TestResultCollector(tempDir);
+        // Given: TestResultCollector with default resolver
+        SourceDirectoryResolver resolver = createDefaultResolver(tempDir);
+        TestResultCollector collector = new TestResultCollector(tempDir, resolver);
         collector.testPlanStarted();
 
         int numThreads = 10;
@@ -79,8 +80,9 @@ class ThreadSafetyTest {
 
     @RepeatedTest(10)
     void shouldHandleConcurrentFailureRecording(@TempDir Path tempDir) throws Exception {
-        // Given: TestResultCollector
-        TestResultCollector collector = new TestResultCollector(tempDir);
+        // Given: TestResultCollector with default resolver
+        SourceDirectoryResolver resolver = createDefaultResolver(tempDir);
+        TestResultCollector collector = new TestResultCollector(tempDir, resolver);
         collector.testPlanStarted();
 
         int numThreads = 10;
@@ -134,8 +136,9 @@ class ThreadSafetyTest {
 
     @Test
     void shouldHandleMixedConcurrentOperations(@TempDir Path tempDir) throws Exception {
-        // Given: TestResultCollector
-        TestResultCollector collector = new TestResultCollector(tempDir);
+        // Given: TestResultCollector with default resolver
+        SourceDirectoryResolver resolver = createDefaultResolver(tempDir);
+        TestResultCollector collector = new TestResultCollector(tempDir, resolver);
         collector.testPlanStarted();
 
         int numThreads = 10;
@@ -210,5 +213,13 @@ class ThreadSafetyTest {
             uniqueId,
             source
         ));
+    }
+
+    private SourceDirectoryResolver createDefaultResolver(Path projectRoot) {
+        return new SourceDirectoryResolver(
+            projectRoot,
+            prop -> null,
+            env -> null
+        );
     }
 }

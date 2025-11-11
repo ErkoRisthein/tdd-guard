@@ -9,6 +9,7 @@ import org.junit.platform.launcher.TestIdentifier;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +24,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 class TestResultCollector {
 
     private final Path projectRoot;
+    private final SourceDirectoryResolver directoryResolver;
     private final List<TestCase> tests = new CopyOnWriteArrayList<>();
     private final List<TestFailure> failures = new CopyOnWriteArrayList<>();
     private final Map<String, Long> testStartTimes = new ConcurrentHashMap<>();
 
     private volatile long testPlanStartTime;
 
-    TestResultCollector(Path projectRoot) {
+    TestResultCollector(Path projectRoot, SourceDirectoryResolver directoryResolver) {
         this.projectRoot = projectRoot;
+        this.directoryResolver = directoryResolver;
     }
 
     void testPlanStarted() {
@@ -159,16 +162,49 @@ class TestResultCollector {
     }
 
     private String classNameToFilePath(String className) {
-        // Convert com.example.MyTest to src/test/java/com/example/MyTest.java
-        // This is a heuristic - actual file location may vary
-        String path = className.replace('.', '/') + ".java";
+        // Convert com.example.MyTest to com/example/MyTest.java
+        String relativePath = className.replace('.', '/') + ".java";
 
-        // Common convention: test classes are in src/test/java
-        if (className.endsWith("Test") || className.endsWith("Tests")) {
-            return "src/test/java/" + path;
+        // Determine if this is a test class
+        boolean isTestClass = className.endsWith("Test") || className.endsWith("Tests");
+
+        // Get configured directories from resolver
+        List<String> directories;
+        List<String> defaultDirectories;
+
+        if (isTestClass) {
+            directories = directoryResolver.resolveTestSourceDirs();
+            // Default test directories if no configuration
+            defaultDirectories = java.util.Arrays.asList("src/test/java", "src/test/kotlin");
+        } else {
+            directories = directoryResolver.resolveMainSourceDirs();
+            // Default main directories if no configuration
+            defaultDirectories = java.util.Arrays.asList("src/main/java", "src/main/kotlin");
         }
 
-        return "src/main/java/" + path;
+        // If no configuration, use defaults
+        if (directories.isEmpty()) {
+            directories = defaultDirectories;
+        }
+
+        // Try each directory and check if file exists
+        for (String dir : directories) {
+            Path fullPath = projectRoot.resolve(dir).resolve(relativePath);
+            if (Files.exists(fullPath)) {
+                return dir + "/" + relativePath;
+            }
+        }
+
+        // Fallback to first directory if file not found in any location
+        if (!directories.isEmpty()) {
+            return directories.get(0) + "/" + relativePath;
+        }
+
+        // Fallback to original behavior (should never reach here with defaults above)
+        if (isTestClass) {
+            return "src/test/java/" + relativePath;
+        }
+        return "src/main/java/" + relativePath;
     }
 
     private String extractMethodName(TestIdentifier test) {

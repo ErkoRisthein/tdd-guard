@@ -22,6 +22,12 @@ public class FileStructureAnalyzer implements PatternDetector {
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("^\\s*package\\s+([a-z][a-z0-9_.]*);", Pattern.MULTILINE);
     private static final Pattern CLASS_NAME_PATTERN = Pattern.compile("\\bclass\\s+(\\w+)");
 
+    private final SourceAnalyzer sourceAnalyzer;
+
+    public FileStructureAnalyzer(SourceAnalyzer sourceAnalyzer) {
+        this.sourceAnalyzer = sourceAnalyzer;
+    }
+
     @Override
     public String getCategory() {
         return "file-structure";
@@ -144,20 +150,10 @@ public class FileStructureAnalyzer implements PatternDetector {
     }
 
     /**
-     * Finds all test files in src/test directories.
+     * Finds all test files in test directories.
      */
     private List<Path> findTestFilesInTestDirectory(Path projectRoot) {
-        try (Stream<Path> paths = Files.walk(projectRoot)) {
-            return paths
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".java") || p.toString().endsWith(".kt"))
-                .filter(p -> p.toString().contains("/src/test/"))
-                .filter(p -> !p.toString().contains("/build/"))
-                .filter(p -> !p.toString().contains("/target/"))
-                .collect(Collectors.toList());
-        } catch (IOException e) {
-            return Collections.emptyList();
-        }
+        return sourceAnalyzer.findTestFiles(projectRoot);
     }
 
     /**

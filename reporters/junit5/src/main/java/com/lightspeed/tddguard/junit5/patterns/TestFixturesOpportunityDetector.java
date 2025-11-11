@@ -23,6 +23,12 @@ public class TestFixturesOpportunityDetector implements PatternDetector {
     // Pattern to find constructor calls and count parameters
     private static final Pattern CONSTRUCTOR_PATTERN = Pattern.compile("new\\s+[A-Z][A-Za-z0-9_]*\\s*\\([^)]*\\)");
 
+    private final SourceAnalyzer sourceAnalyzer;
+
+    public TestFixturesOpportunityDetector(SourceAnalyzer sourceAnalyzer) {
+        this.sourceAnalyzer = sourceAnalyzer;
+    }
+
     @Override
     public String getCategory() {
         return "test-fixtures-opportunity";
@@ -34,7 +40,7 @@ public class TestFixturesOpportunityDetector implements PatternDetector {
         Path projectRoot,
         BuildMetrics buildMetrics
     ) {
-        List<Path> testFiles = SourceAnalyzer.findTestFiles(projectRoot);
+        List<Path> testFiles = sourceAnalyzer.findTestFiles(projectRoot);
 
         if (testFiles.isEmpty()) {
             return Optional.empty();

@@ -53,6 +53,14 @@ tasks.test {
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
         showStandardStreams = false
     }
+
+    // Configure system properties for TDD Guard
+    systemProperty("tddguard.testSourceDirs", System.getProperty("tddguard.testSourceDirs", "src/test/java"))
+    systemProperty("tddguard.mainSourceDirs", System.getProperty("tddguard.mainSourceDirs", "src/main/java"))
+    systemProperty("tddguard.outputPath", System.getProperty("tddguard.outputPath", "${project.buildDir}/tdd-guard-results.json"))
+
+    // Enable TDD Guard JUnit5 reporter
+    systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
 }
 
 tasks.withType<JavaCompile> {

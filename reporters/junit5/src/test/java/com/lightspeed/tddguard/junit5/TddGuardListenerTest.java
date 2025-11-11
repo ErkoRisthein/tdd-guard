@@ -75,9 +75,9 @@ class TddGuardListenerTest {
     }
 
     @Test
-    void shouldReturnImmediatelyWhenDisabled() {
+    void shouldReturnImmediatelyWhenDisabled(@TempDir Path tempDir) {
         // Given: Listener is disabled
-        TddGuardListener listener = new TddGuardListener(Path.of("/tmp"), () -> null, () -> null);
+        TddGuardListener listener = new TddGuardListener(tempDir, () -> null, () -> null);
         assertFalse(listener.isEnabled());
 
         // When: Calling lifecycle methods with null (listener should handle gracefully)

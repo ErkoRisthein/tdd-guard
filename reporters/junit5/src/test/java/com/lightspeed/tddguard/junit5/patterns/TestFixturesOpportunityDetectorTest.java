@@ -1,5 +1,6 @@
 package com.lightspeed.tddguard.junit5.patterns;
 
+import com.lightspeed.tddguard.junit5.SourceDirectoryResolver;
 import com.lightspeed.tddguard.junit5.model.TestJson;
 import com.lightspeed.tddguard.junit5.model.TestSummary;
 import com.lightspeed.tddguard.junit5.patterns.model.EducationalFeedback;
@@ -21,15 +22,21 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TestFixturesOpportunityDetectorTest {
 
-    private final TestFixturesOpportunityDetector detector = new TestFixturesOpportunityDetector();
+    private TestFixturesOpportunityDetector createDetector(Path projectRoot) {
+        SourceDirectoryResolver resolver = new SourceDirectoryResolver(projectRoot, key -> null, key -> null);
+        SourceAnalyzer analyzer = new SourceAnalyzer(resolver);
+        return new TestFixturesOpportunityDetector(analyzer);
+    }
 
     @Test
-    void shouldReturnCorrectCategory() {
+    void shouldReturnCorrectCategory(@TempDir Path projectRoot) {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         assertEquals("test-fixtures-opportunity", detector.getCategory());
     }
 
     @Test
     void shouldDetectSlowCompilation(@TempDir Path projectRoot) throws IOException {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given: Compilation time > 2000ms
         createSimpleTestFile(projectRoot, "SlowTest.java");
 
@@ -50,6 +57,7 @@ class TestFixturesOpportunityDetectorTest {
 
     @Test
     void shouldDetectHighDependencyDepth(@TempDir Path projectRoot) throws IOException {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given: High constructor complexity (4 or more parameters = depth > 3)
         String testCode = "public class ComplexTest {\n" +
             "    @BeforeEach\n" +
@@ -76,6 +84,7 @@ class TestFixturesOpportunityDetectorTest {
 
     @Test
     void shouldNotDetectBelowThresholds(@TempDir Path projectRoot) throws IOException {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given: Fast compilation and low complexity
         createSimpleTestFile(projectRoot, "SimpleTest.java");
 
@@ -91,6 +100,7 @@ class TestFixturesOpportunityDetectorTest {
 
     @Test
     void shouldIncludeCompilationTimeInEvidence(@TempDir Path projectRoot) throws IOException {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given
         createSimpleTestFile(projectRoot, "Test.java");
 
@@ -107,6 +117,7 @@ class TestFixturesOpportunityDetectorTest {
 
     @Test
     void shouldIncludeDependencyDepthInEvidence(@TempDir Path projectRoot) throws IOException {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given
         String testCode = "public class Test {\n" +
             "    void test() {\n" +
@@ -129,6 +140,7 @@ class TestFixturesOpportunityDetectorTest {
 
     @Test
     void shouldProvideRecommendation(@TempDir Path projectRoot) throws IOException {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given
         createSimpleTestFile(projectRoot, "Test.java");
 
@@ -146,6 +158,7 @@ class TestFixturesOpportunityDetectorTest {
 
     @Test
     void shouldHandleEmptyProject(@TempDir Path projectRoot) {
+        TestFixturesOpportunityDetector detector = createDetector(projectRoot);
         // Given: No test files
         TestJson testResults = createTestResults(0, 0, 0, 0);
         BuildMetrics buildMetrics = BuildMetrics.empty();

@@ -53,12 +53,21 @@ public class TddGuardListener implements TestExecutionListener {
         this.projectRoot = projectRoot;
         this.enabled = detectTddGuard(envVarSupplier);
         this.jsonWriter = new TestJsonWriter();
+
+        // Create shared SourceDirectoryResolver and SourceAnalyzer
+        SourceDirectoryResolver directoryResolver = new SourceDirectoryResolver(
+            projectRoot,
+            System::getProperty,
+            System::getenv
+        );
+        SourceAnalyzer sourceAnalyzer = new SourceAnalyzer(directoryResolver);
+
         this.patternDetectors = List.of(
-            new MockOveruseDetector(),
-            new TestFixturesOpportunityDetector(),
-            new MissingIsolationDetector(),
+            new MockOveruseDetector(sourceAnalyzer),
+            new TestFixturesOpportunityDetector(sourceAnalyzer),
+            new MissingIsolationDetector(sourceAnalyzer),
             new GradleBuildOptimizationDetector(),
-            new FileStructureAnalyzer()
+            new FileStructureAnalyzer(sourceAnalyzer)
         );
     }
 
@@ -130,7 +139,13 @@ public class TddGuardListener implements TestExecutionListener {
     public void testPlanExecutionStarted(TestPlan testPlan) {
         if (!enabled) return;
         try {
-            collector = new TestResultCollector(projectRoot);
+            // Create resolver with system property and environment variable suppliers
+            SourceDirectoryResolver resolver = new SourceDirectoryResolver(
+                projectRoot,
+                System::getProperty,
+                System::getenv
+            );
+            collector = new TestResultCollector(projectRoot, resolver);
             collector.testPlanStarted();
         } catch (Exception e) {
             // Never fail tests due to TDD Guard errors

@@ -85,8 +85,35 @@ dependencies {
 tasks.test {
     systemProperty("tddguard.projectRoot", project.rootDir.absolutePath)
     environment("TDDGUARD_ENABLED", "true")
+
+    // Optional: Configure custom source directories
+    // systemProperty("tddguard.testSourceDirs", "test,src/test/java,src/test/kotlin")
+    // systemProperty("tddguard.mainSourceDirs", "src,src/main/java,src/main/kotlin")
 }
 ```
+
+**Custom Source Directory Configuration** (optional):
+
+By default, the reporter looks for tests in standard Maven/Gradle locations (`src/test/java`, `src/test/kotlin`) and main code in (`src/main/java`, `src/main/kotlin`). For non-standard project layouts, configure custom paths:
+
+```kotlin
+tasks.test {
+    // Comma-separated list of test source directories
+    systemProperty("tddguard.testSourceDirs", "test,integration-test,src/test/java")
+
+    // Comma-separated list of main source directories
+    systemProperty("tddguard.mainSourceDirs", "src,main,src/main/java")
+}
+```
+
+Or use environment variables:
+
+```bash
+export TDDGUARD_TEST_SOURCE_DIRS="test,integration-test"
+export TDDGUARD_MAIN_SOURCE_DIRS="src,main"
+```
+
+**Configuration precedence**: System properties → Environment variables → Defaults
 
 **Authentication**: Set GitHub credentials in `~/.gradle/gradle.properties`:
 
@@ -122,6 +149,9 @@ Or use environment variables: `GITHUB_ACTOR` and `GITHUB_TOKEN`
             <configuration>
                 <systemPropertyVariables>
                     <tddguard.projectRoot>${project.basedir}</tddguard.projectRoot>
+                    <!-- Optional: Configure custom source directories -->
+                    <!-- <tddguard.testSourceDirs>test,src/test/java,src/test/kotlin</tddguard.testSourceDirs> -->
+                    <!-- <tddguard.mainSourceDirs>src,src/main/java,src/main/kotlin</tddguard.mainSourceDirs> -->
                 </systemPropertyVariables>
                 <environmentVariables>
                     <TDDGUARD_ENABLED>true</TDDGUARD_ENABLED>
@@ -164,7 +194,9 @@ The reporter auto-enables when either condition is met:
 
 When disabled, all methods return immediately with <100µs overhead per test.
 
-## Project Root Resolution
+## Configuration
+
+### Project Root Resolution
 
 The reporter uses this fallback hierarchy to find the project root:
 
@@ -172,6 +204,58 @@ The reporter uses this fallback hierarchy to find the project root:
 2. Environment variable: `TDDGUARD_PROJECT_ROOT`
 3. Traverse up from working directory until finding `build.gradle`, `build.gradle.kts`, or `pom.xml`
 4. Fallback to current working directory
+
+### Source Directory Resolution
+
+The reporter automatically detects test and main source directories for accurate file path resolution. This is particularly useful for projects with non-standard layouts or multi-module structures.
+
+**Default Behavior** (no configuration needed):
+
+- Test sources: `src/test/java`, `src/test/kotlin`, `src/test`
+- Main sources: `src/main/java`, `src/main/kotlin`, `src/main`
+
+**Custom Configuration**:
+
+For non-standard project layouts, configure custom source directories using system properties or environment variables:
+
+**System Properties** (Gradle example):
+
+```kotlin
+tasks.test {
+    systemProperty("tddguard.testSourceDirs", "test,integration-test,src/test/java")
+    systemProperty("tddguard.mainSourceDirs", "src,main,src/main/java")
+}
+```
+
+**System Properties** (Maven example):
+
+```xml
+<systemPropertyVariables>
+    <tddguard.testSourceDirs>test,src/test/java,src/test/kotlin</tddguard.testSourceDirs>
+    <tddguard.mainSourceDirs>src,src/main/java,src/main/kotlin</tddguard.mainSourceDirs>
+</systemPropertyVariables>
+```
+
+**Environment Variables**:
+
+```bash
+export TDDGUARD_TEST_SOURCE_DIRS="test,integration-test"
+export TDDGUARD_MAIN_SOURCE_DIRS="src,main"
+```
+
+**Resolution Hierarchy**:
+
+1. System properties (`tddguard.testSourceDirs`, `tddguard.mainSourceDirs`)
+2. Environment variables (`TDDGUARD_TEST_SOURCE_DIRS`, `TDDGUARD_MAIN_SOURCE_DIRS`)
+3. Default conventions (standard Maven/Gradle layout)
+
+**Format**: Comma-separated list of relative paths from project root. Paths can be:
+
+- Simple directory names: `test,src`
+- Full paths: `src/test/java,src/test/kotlin`
+- Mixed: `test,integration-test,src/test/java`
+
+The reporter will check files against all configured directories to determine if they are test or main source files.
 
 ## JSON Output Format
 

@@ -1,5 +1,6 @@
 package com.lightspeed.tddguard.junit5.patterns;
 
+import com.lightspeed.tddguard.junit5.SourceDirectoryResolver;
 import com.lightspeed.tddguard.junit5.model.TestJson;
 import com.lightspeed.tddguard.junit5.model.TestSummary;
 import com.lightspeed.tddguard.junit5.patterns.model.EducationalFeedback;
@@ -31,10 +32,16 @@ class ForbiddenWordsValidationTest {
         Pattern.CASE_INSENSITIVE
     );
 
+    // Helper methods to create detectors
+    private SourceAnalyzer createSourceAnalyzer(Path projectRoot) {
+        SourceDirectoryResolver resolver = new SourceDirectoryResolver(projectRoot, key -> null, key -> null);
+        return new SourceAnalyzer(resolver);
+    }
+
     @Test
     void mockOveruseDetectorMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
         // Given: Create scenario that triggers mock overuse detection
-        MockOveruseDetector detector = new MockOveruseDetector();
+        MockOveruseDetector detector = new MockOveruseDetector(createSourceAnalyzer(projectRoot));
 
         String testCode = "import org.mockito.Mock;\n\n" +
             "public class OrderTest {\n" +
@@ -63,7 +70,7 @@ class ForbiddenWordsValidationTest {
     @Test
     void testFixturesDetectorMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
         // Given: Create scenario that triggers test-fixtures opportunity detection
-        TestFixturesOpportunityDetector detector = new TestFixturesOpportunityDetector();
+        TestFixturesOpportunityDetector detector = new TestFixturesOpportunityDetector(createSourceAnalyzer(projectRoot));
 
         String testCode = "public class ComplexTest {\n" +
             "    @Test\n" +
@@ -92,7 +99,7 @@ class ForbiddenWordsValidationTest {
     @Test
     void missingIsolationDetectorMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
         // Given: Create scenario that triggers missing isolation detection
-        MissingIsolationDetector detector = new MissingIsolationDetector();
+        MissingIsolationDetector detector = new MissingIsolationDetector(createSourceAnalyzer(projectRoot));
 
         String testCode = "public class ApiTest {\n" +
             "    private static final String API_URL = \"https://api.example.com:8080/v1\";\n\n" +
@@ -151,7 +158,7 @@ class ForbiddenWordsValidationTest {
     @Test
     void fileStructureAnalyzerMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
         // Given: Create scenario that triggers file structure detection
-        FileStructureAnalyzer detector = new FileStructureAnalyzer();
+        FileStructureAnalyzer detector = new FileStructureAnalyzer(createSourceAnalyzer(projectRoot));
 
         // Create test file in production directory
         String testCode = "import org.junit.jupiter.api.Test;\n\n" +
@@ -180,7 +187,7 @@ class ForbiddenWordsValidationTest {
     @Test
     void fileStructureAnalyzerPackageMismatchMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
         // Given: Create scenario that triggers package mismatch detection
-        FileStructureAnalyzer detector = new FileStructureAnalyzer();
+        FileStructureAnalyzer detector = new FileStructureAnalyzer(createSourceAnalyzer(projectRoot));
 
         // Create production class in com.example.services package
         String productionCode = "package com.example.services;\n\n" +
@@ -240,11 +247,11 @@ class ForbiddenWordsValidationTest {
         BuildMetrics buildMetrics = BuildMetrics.withHistory(Arrays.asList(1000L, 3000L, 2000L));
 
         List<PatternDetector> detectors = Arrays.asList(
-            new MockOveruseDetector(),
-            new TestFixturesOpportunityDetector(),
-            new MissingIsolationDetector(),
+            new MockOveruseDetector(createSourceAnalyzer(projectRoot)),
+            new TestFixturesOpportunityDetector(createSourceAnalyzer(projectRoot)),
+            new MissingIsolationDetector(createSourceAnalyzer(projectRoot)),
             new GradleBuildOptimizationDetector(),
-            new FileStructureAnalyzer()
+            new FileStructureAnalyzer(createSourceAnalyzer(projectRoot))
         );
 
         // When/Then: Check all detectors
