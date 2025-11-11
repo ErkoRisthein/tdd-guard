@@ -83,6 +83,7 @@ reporters/pytest/pytest.ini
 
 # Claude indexer
 .claude-indexer/
+.code-indexer/
 
 # Internal documentation
 docs/internal/
