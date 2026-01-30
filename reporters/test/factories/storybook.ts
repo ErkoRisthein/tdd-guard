@@ -121,9 +121,8 @@ export function createStorybookReporter(): ReporterConfig {
         await waitForStorybook
 
         // Run Storybook test-runner
-        const testRunnerPath = require.resolve(
-          '@storybook/test-runner/dist/test-storybook'
-        )
+        const testRunnerPath =
+          require.resolve('@storybook/test-runner/dist/test-storybook')
         spawnSync(
           process.execPath,
           [

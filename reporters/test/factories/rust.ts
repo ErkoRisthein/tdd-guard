@@ -77,7 +77,7 @@ export function createRustReporter(): ReporterConfig {
       }
 
       // Fall back to cargo test if nextest not available
-      if (!hasNextest || (cargoTestResult && cargoTestResult.status === 127)) {
+      if (!hasNextest || cargoTestResult?.status === 127) {
         cargoTestResult = spawnSync(
           rustBinary,
           [
