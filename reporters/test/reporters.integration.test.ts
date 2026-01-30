@@ -1,5 +1,3 @@
-// test/reporters.integration.test.ts - Updated integration tests with Rust coverage
-
 import { describe, it, expect, beforeAll } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -7,7 +5,6 @@ import { tmpdir } from 'node:os'
 import { FileStorage, Config as TDDConfig } from 'tdd-guard'
 import type { ReporterConfig, TestResultData, TestScenarios } from './types'
 
-// Extended test error type that includes Rust-specific fields
 type TestError = {
   message: string
   expected?: string
